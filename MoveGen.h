@@ -23,9 +23,9 @@ class MoveGen {
 private:  
     // PRIVATE MEMBERS
     //------------------------------------------------------------------------//
-    std::string inputBoardPosition; 
-    std::string copyBoardPosition; 
-    std::vector<std::string> boardPositions;
+    std::string inputBoardState; 
+    std::string copyBoardState; 
+    std::vector<std::string> boardStates;
     //------------------------------------------------------------------------//
 public:  
     // CONSTRUCTORS
@@ -38,20 +38,23 @@ public:
     //------------------------------------------------------------------------//
     std::vector<std::string> generateAdd();
     std::vector<std::string> generateMove();
-    int* neighbors(int&);
+    std::vector<std::string> generateMovesOpening();
+    std::vector<std::string> generateHopping();
+    std::vector<std::string> generateMovesMidgameEndgame();
+    int* neighbors(const int&);
     void generateRemove();
-    bool closeMill(int&);
+    bool closeMill(const int&);
     //------------------------------------------------------------------------//
 
     // GETTERS AND SETTERS
     //------------------------------------------------------------------------//
-    std::vector<std::string> getBoardPositions();
-    std::string getInputBoardPosition();
-    std::string getCopyBoardPosition();
+    std::vector<std::string> getBoardStates();
+    std::string getInputBoardState();
+    std::string getCopyBoardState();
 
-    void setBoardPositions(std::vector<std::string> boardPositions);
-    void setInputBoardPosition(std::string inputBoardPosition);
-    void setCopyBoardPosition(std::string copyBoardPosition);
+    void setBoardStates(std::vector<std::string> boardStates);
+    void setInputBoardState(std::string inputBoardState);
+    void setCopyBoardState(std::string copyBoardState);
     //------------------------------------------------------------------------//
 };
 //============================================================================//
