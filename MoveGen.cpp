@@ -87,7 +87,9 @@ std::vector<std::string> MoveGen::generateMove() {
             }
         } 
     }
+    // RESET THE COPY FOR USE IN OTHER FUNCTIONS AND RETURN THE FUNCTION RESULT
     //------------------------------------------------------------------------//
+    copyBoardState = "";
     return boardStates;
 } // generateMove()
 
@@ -136,6 +138,9 @@ std::vector<std::string> MoveGen::generateHopping() {
             }
         }
     }
+    // RESET THE COPY FOR USE IN OTHER FUNCTIONS AND RETURN THE FUNCTION RESULT
+    //------------------------------------------------------------------------//
+    copyBoardState = "";
     return boardStates;
 } // generateHopping()
 
@@ -161,6 +166,9 @@ void MoveGen::generateRemove() {
             }
         }
     }
+    // RESET THE COPY FOR USE IN OTHER FUNCTIONS AND RETURN THE FUNCTION RESULT
+    //------------------------------------------------------------------------//
+    copyBoardState = "";
 } // generateRemove()
 
 int* MoveGen::neighbors(const int& l) {
