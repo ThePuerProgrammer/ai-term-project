@@ -85,6 +85,9 @@ std::vector<std::string> MoveGen::generateMove() {
                     }
                 }
             }
+            // DEALLOCATE RESOURCES
+            //----------------------------------------------------------------//
+            delete n;
         } 
     }
     // RESET THE COPY FOR USE IN OTHER FUNCTIONS AND RETURN THE FUNCTION RESULT

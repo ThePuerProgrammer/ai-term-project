@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fstream>
 #include "GUI.h"
+#include "MoveGen.h"
+#include "StaticEstimation.h"
 //============================================================================//
 
 // MAIN *ACCEPTS COMMAND LINE ARGS*
@@ -97,14 +99,39 @@ int main(int argc, char *argv[]) {
     }
     //------------------------------------------------------------------------//
 
-    // GUI CLASS PRINTS A REPRESENTATION OF THE BOARD IN THE TERMINAL
+    // GUI CLASS PRINTS A REPRESENTATION OF THE BOARD IN THE TERMINAL 
     //------------------------------------------------------------------------//
     GUI gui(inputBoardPos);
+    std::cout << "Input board position: " << std::endl;
     gui.print_board();
     //------------------------------------------------------------------------//
 
-    // PRINT INPUT_POS/OUTPUT_POS/TOTAL_EVALUATIONS/MINIMAX_ESTIMATE
+    // MOVE GENERATOR MAKES A LIST OF POSSIBLE MOVES FOR THE OPENEING
     //------------------------------------------------------------------------//
+    MoveGen moveGen(inputBoardPos);
+    std::vector<std::string> openingMoves = moveGen.generateMovesOpening();
+    positionsEvaluated = openingMoves.size();
+    //------------------------------------------------------------------------//
+
+    // STATIC ESTIMATION DETERMINES THE BEST POSSIBLE MOVE FROM OUR LIST
+    //------------------------------------------------------------------------//
+    StaticEstimation staticEstimation(openingMoves);
+    staticEstimation.estimateOpening();
+    miniMaxEstimate = staticEstimation.getBestEstimation();
+    int position = staticEstimation.getEstimationsMap().at(miniMaxEstimate);
+    outputBoardPos = openingMoves[position];
+    //------------------------------------------------------------------------//
+
+    // WRITE OUTPUT BOARD POSITION TO OUTPUT FILE
+    //------------------------------------------------------------------------//
+    outputFile << outputBoardPos << std::endl;
+    //------------------------------------------------------------------------//
+
+    // PRINT BOARD/INPUT_POS/OUTPUT_POS/TOTAL_EVALUATIONS/MINIMAX_ESTIMATE
+    //------------------------------------------------------------------------//
+    gui.set_board_pos(outputBoardPos);
+    std::cout << "Output board position: " << std::endl;
+    gui.print_board();
     std::cout << "Input position: " << inputBoardPos << std::endl;
     std::cout << "Output position: " << outputBoardPos << std::endl;
     std::cout << "Positions evaluated by static esitmation: " 

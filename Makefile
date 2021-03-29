@@ -7,14 +7,20 @@
 
 ##########################################################################################
 # EXECUTABLE
-MiniMaxOpening: GUI.o main.o
-	g++ GUI.o main.o -o MiniMaxOpening
+MiniMaxOpening: GUI.o MoveGen.o StaticEstimation.o main.o
+	g++ GUI.o MoveGen.o StaticEstimation.o main.o -o MiniMaxOpening
 ##########################################################################################
 # .o FILES
 GUI.o: GUI.h GUI.cpp
 	g++ -c -g GUI.cpp 
 
-main.o: GUI.h main.cpp
+MoveGen.o: MoveGen.h MoveGen.cpp
+	g++ -c -g MoveGen.cpp
+
+StaticEstimation.o: StaticEstimation.h StaticEstimation.cpp
+	g++ -c -g StaticEstimation.cpp
+
+main.o: GUI.h MoveGen.h StaticEstimation.h main.cpp
 	g++ -c -g main.cpp
 ##########################################################################################
 clean:
