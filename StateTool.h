@@ -2,63 +2,47 @@
 // * JESSE RANKINS
 // * UCO COMPUTER SCIENCE 2021
 // * CONCEPTS OF AI - TERM PROJECT
-// * STATIC ESTIMATION CLASS DECLARATION FILE 
-// * EVALUATES A LIST OF GENERATED POSSIBILITIES FOR OPTIMAL OUTCOME
+// * STATE TOOL CLASS DECLARATION FILE 
+// * GENERIC TOOLS FOR MANIPULATING AND EVALUATING A BOARD STATE
 //============================================================================//
 
 // PREPROCESSORS
 //============================================================================//
-#ifndef STATIC_ESTIMATION_H
-#define STATIC_ESTIMATION_H
+#ifndef STATE_TOOL_H
+#define STATE_TOOL_H
 //============================================================================//
 
 // INCLUDES
 //============================================================================//
 #include <string>
-#include <vector>
-#include <unordered_map>
 //============================================================================//
 
-// STATIC ESTIMATION
+// STATE TOOL CLASS
 //============================================================================//
-class StaticEstimation {
-private:  
+class StateTool {
+private:
     // PRIVATE MEMBERS
     //------------------------------------------------------------------------//
-    std::vector<std::string> positions;
-    std::unordered_map<int, int> estimationsMap;
-    int bestEstimation;
+    std::string boardState;
     //------------------------------------------------------------------------//
 public:  
-    // CONSTRUCTORS
+    // CONSTRUCTORS AND DESTRUCTORS
     //------------------------------------------------------------------------//
-    StaticEstimation();
-    StaticEstimation(std::vector<std::string>);
-    //------------------------------------------------------------------------//
-
-    // PUBLIC STATIC VARIABLES
-    //------------------------------------------------------------------------//
-    static int positionsEvaluated;
+    StateTool();
+    StateTool(std::string);
     //------------------------------------------------------------------------//
 
     // PUBLIC FUNCTIONS
     //------------------------------------------------------------------------//
-    void estimateMidgame();
-    void estimateOpening();
-    int numberOfBlackPieces(std::string);
-    int numberOfWhitePieces(std::string);
-    int numberOfBlackMoves();
+    std::string getInvertBoard();
     //------------------------------------------------------------------------//
 
     // GETTERS AND SETTERS
     //------------------------------------------------------------------------//
-    std::vector<std::string> getPositions();
-    std::unordered_map<int, int> getEstimationsMap();
-    int getBestEstimation();
+    std::string getBoardState();
 
-    void setPositions(std::vector<std::string>);
-    void setEstimationsMap(std::unordered_map<int, int>);
+    void setBoardState(std::string);
     //------------------------------------------------------------------------//
-}; // class StaticEstimation
+};
 //============================================================================//
 #endif

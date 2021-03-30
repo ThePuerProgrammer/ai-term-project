@@ -3,6 +3,7 @@
 // * UCO COMPUTER SCIENCE 2021
 // * CONCEPTS OF AI - TERM PROJECT
 // * MINIMAXOPENING PROGRAM
+// * AI THAT PLAYS NINE MENS MORRIS BETTER THAN YOU
 // * MAIN 
 //============================================================================//
 
@@ -10,9 +11,23 @@
 //============================================================================//
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 #include "GUI.h"
 #include "MoveGen.h"
 #include "StaticEstimation.h"
+#include "StateNode.h"
+#include "StateTool.h"
+//============================================================================//
+
+// FORWARD DECLARATIONS / PROTOTYPES
+//============================================================================//
+void recursiveTreeFill(StateNode*, int, bool);
+//============================================================================//
+
+// GLOBAL VARIABLES
+//============================================================================//
+std::unordered_map<std::string, std::pair<StateNode*, int> > cameFrom;
+std::unordered_map<int, std::string> leafEstimation;
 //============================================================================//
 
 // MAIN *ACCEPTS COMMAND LINE ARGS*
@@ -23,6 +38,7 @@ int main(int argc, char *argv[]) {
     //------------------------------------------------------------------------//
     int searchDepth = 0, positionsEvaluated = 0, miniMaxEstimate = 0;
     std::string inputBoardPos = "", outputBoardPos = "";
+    bool whitesTurn = true;
     //------------------------------------------------------------------------//
 
     //************************************************************************//
@@ -106,23 +122,47 @@ int main(int argc, char *argv[]) {
     gui.print_board();
     //------------------------------------------------------------------------//
 
-    // MOVE GENERATOR MAKES A LIST OF POSSIBLE MOVES FOR THE OPENEING
+    // NODE STRUCTURE IS USED TO CREATE A TREE OF STATES FROM ROOT C.M.A. STATE
+    //------------------------------------------------------------------------//
+    std::vector<std::string> onlyInputState;
+    onlyInputState.push_back(inputBoardPos);
+    StateNode rootNode(onlyInputState, searchDepth, 0);
+    //------------------------------------------------------------------------//
+
+    // MOVE GENERATOR MAKES A LIST OF POSSIBLE MOVES FROM ANY BOARD STATE
     //------------------------------------------------------------------------//
     MoveGen moveGen(inputBoardPos);
     std::vector<std::string> openingMoves = moveGen.generateMovesOpening();
-    positionsEvaluated = openingMoves.size();
     //------------------------------------------------------------------------//
 
-    // STATIC ESTIMATION DETERMINES THE BEST POSSIBLE MOVE FROM OUR LIST
+    // GIVE THE ROOT NODE ITS FIRST SET OF CHILD NODES AND GROW TO SEARCH DEPTH
     //------------------------------------------------------------------------//
-    StaticEstimation staticEstimation(openingMoves);
-    staticEstimation.estimateOpening();
-    miniMaxEstimate = staticEstimation.getBestEstimation();
-    int position = staticEstimation.getEstimationsMap().at(miniMaxEstimate);
-    outputBoardPos = openingMoves[position];
+    if (searchDepth >= 1) 
+        rootNode.addChild(openingMoves);
+    StateNode* p = rootNode.getChildNodes()[0];
+    whitesTurn = !whitesTurn;
+    recursiveTreeFill(p, searchDepth, whitesTurn);
     //------------------------------------------------------------------------//
 
-    // WRITE OUTPUT BOARD POSITION TO OUTPUT FILE
+    std::unordered_map<int, std::string>::iterator it = leafEstimation.begin();
+    int max = -2147483648;
+    for (;it != leafEstimation.end(); ++it) 
+        if ((*it).first > max) max = (*it).first;
+
+
+    std::string bestFinalState = leafEstimation.at(max);
+    for (int i = 1; i < searchDepth; ++i) {
+        StateNode* tracker = cameFrom.at(bestFinalState).first;
+        int index = cameFrom.at(bestFinalState).second;
+        bestFinalState = tracker->getBoardStates()[index];
+    }
+
+    StaticEstimation staticEstimation;
+    positionsEvaluated = staticEstimation.positionsEvaluated;
+    outputBoardPos = bestFinalState;
+    miniMaxEstimate = max;
+
+    // WRITE OUTPUT BOARD POSITION TO OUTPUT FILE 
     //------------------------------------------------------------------------//
     outputFile << outputBoardPos << std::endl;
     //------------------------------------------------------------------------//
@@ -152,5 +192,79 @@ int main(int argc, char *argv[]) {
     // TERMINATE PROGRAM SUCCESSFULLY 
     //------------------------------------------------------------------------//
     return 0;
+}
+//============================================================================//
+
+// LOCAL FUNCTIONS
+//============================================================================//
+void recursiveTreeFill(StateNode* p, int maxDepth, bool whitesTurn) {
+
+    // ONLY PROCEED TO MAX DEPTH
+    //------------------------------------------------------------------------//
+    if (p->getDepth() < maxDepth) {
+
+        // LOOP THROUGH EVERY BOARD STATE IN THE NODES STATE ARRAY
+        //--------------------------------------------------------------------//
+        for (int i = 0; i < p->getBoardStates().size(); ++i) {
+
+            // LOCAL VARIABLES
+            //----------------------------------------------------------------//
+            std::string board;
+            StateTool tool;
+
+            // IF BLACKS TURN, INVERT THE BOARD
+            //----------------------------------------------------------------//
+            if (!whitesTurn) {
+                tool.setBoardState(p->getBoardStates()[i]);
+                board = tool.getInvertBoard();
+            } else {
+                board = p->getBoardStates()[i];
+            }
+
+            // GENERATE ALL POSSIBLE MOVES FROM THIS STATE
+            //----------------------------------------------------------------//
+            MoveGen moveGen(board);
+            std::vector<std::string> m = moveGen.generateMovesOpening();
+
+            if (!whitesTurn) {
+                for (int j = 0; j < m.size(); ++j) {
+                    tool.setBoardState(m[j]);
+                    m[j] = tool.getInvertBoard();
+                }
+            }
+            
+            // CONNECT THE NEW STATE NODE AND FILL ITS FUTURE STATES
+            //----------------------------------------------------------------//
+            p->addChild(m);
+
+            // CREATE A TRACE FOR EVERY STATE
+            //----------------------------------------------------------------//
+            int size = p->getChildNodes()[i]->getBoardStates().size();
+            for (int j = 0; j < size; ++j) {
+                cameFrom.insert(
+                    std::make_pair(
+                        p->getChildNodes()[i]->getBoardStates()[j],
+                        std::make_pair(p, j)
+                    )
+                );
+                // std::cout << p->getChildNodes()[i]->getBoardStates()[j]
+                //           << std::endl;
+            }
+
+            // CONTINUE THE RECURSIVE CALL
+            //----------------------------------------------------------------//
+            recursiveTreeFill(p->getChildNodes()[i], maxDepth, !whitesTurn);
+        }
+    } else {
+
+        // STATIC ESTIMATION CLASS TO EVALUATE THE LEAF POSITIONS
+        //--------------------------------------------------------------------//
+        StaticEstimation staticEstimation(p->getBoardStates());
+        staticEstimation.estimateOpening();
+        int best = staticEstimation.getBestEstimation();
+        int l = staticEstimation.getEstimationsMap().at(best);
+        std::string pos = staticEstimation.getPositions()[l];
+        leafEstimation.insert(std::make_pair(best, pos));
+    }
 }
 //============================================================================//

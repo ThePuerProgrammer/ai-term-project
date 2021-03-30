@@ -2,63 +2,58 @@
 // * JESSE RANKINS
 // * UCO COMPUTER SCIENCE 2021
 // * CONCEPTS OF AI - TERM PROJECT
-// * STATIC ESTIMATION CLASS DECLARATION FILE 
-// * EVALUATES A LIST OF GENERATED POSSIBILITIES FOR OPTIMAL OUTCOME
+// * STATE NODE CLASS DECLARATION FILE 
+// * TREE BUILDING NODE ELEMENT FOR GAME BOARD STATES
 //============================================================================//
 
 // PREPROCESSORS
 //============================================================================//
-#ifndef STATIC_ESTIMATION_H
-#define STATIC_ESTIMATION_H
+#ifndef STATE_NODE_H
+#define STATE_NODE_H
 //============================================================================//
 
 // INCLUDES
 //============================================================================//
 #include <string>
 #include <vector>
-#include <unordered_map>
 //============================================================================//
 
-// STATIC ESTIMATION
+// STATE NODE CLASS DECLARATION
 //============================================================================//
-class StaticEstimation {
+class StateNode {
 private:  
     // PRIVATE MEMBERS
     //------------------------------------------------------------------------//
-    std::vector<std::string> positions;
-    std::unordered_map<int, int> estimationsMap;
-    int bestEstimation;
+    std::vector<StateNode*> childNodes;
+    std::vector<std::string> boardStates;
+    int depth;
+    int height;
     //------------------------------------------------------------------------//
 public:  
-    // CONSTRUCTORS
+    // CONSTRUCTORS/DESTRUCTOR
     //------------------------------------------------------------------------//
-    StaticEstimation();
-    StaticEstimation(std::vector<std::string>);
-    //------------------------------------------------------------------------//
-
-    // PUBLIC STATIC VARIABLES
-    //------------------------------------------------------------------------//
-    static int positionsEvaluated;
+    StateNode(int, int);
+    StateNode(std::vector<std::string>, int, int);
+    ~StateNode();
     //------------------------------------------------------------------------//
 
     // PUBLIC FUNCTIONS
     //------------------------------------------------------------------------//
-    void estimateMidgame();
-    void estimateOpening();
-    int numberOfBlackPieces(std::string);
-    int numberOfWhitePieces(std::string);
-    int numberOfBlackMoves();
+    void addChild(std::vector<std::string>);
     //------------------------------------------------------------------------//
 
-    // GETTERS AND SETTERS
+    // GETTERS/SETTERS
     //------------------------------------------------------------------------//
-    std::vector<std::string> getPositions();
-    std::unordered_map<int, int> getEstimationsMap();
-    int getBestEstimation();
+    std::vector<StateNode*> getChildNodes();
+    std::vector<std::string> getBoardStates();
+    int getDepth();
+    int getHeight();
 
-    void setPositions(std::vector<std::string>);
-    void setEstimationsMap(std::unordered_map<int, int>);
+    void setChildNodes(std::vector<StateNode*>);
+    void setBoardStates(std::vector<std::string>);
+    void setDepth(int);
+    void setHeight(int);
     //------------------------------------------------------------------------//
-}; // class StaticEstimation
+};
 //============================================================================//
 #endif

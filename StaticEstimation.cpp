@@ -11,6 +11,11 @@
 #include "StaticEstimation.h"
 //============================================================================//
 
+// STATIC IMPLEMENTATION
+//============================================================================//
+int StaticEstimation::positionsEvaluated = 0;
+//============================================================================//
+
 // CONSTRUCTORS
 //============================================================================//
 StaticEstimation::StaticEstimation() {} // StaticEstimation()
@@ -31,6 +36,7 @@ void StaticEstimation::estimateMidgame() {
     // FOR EVERY BOARD POSITION IN POSITIONS
     //------------------------------------------------------------------------//
     for (int i = 0; i < positions.size(); ++i) {
+        ++positionsEvaluated;
 
     }
     //------------------------------------------------------------------------//
@@ -49,6 +55,8 @@ void StaticEstimation::estimateOpening() {
     // FOR EVERY BOARD POSITION IN POSITIONS
     //------------------------------------------------------------------------//
     for (int i = 0; i < positions.size(); ++i) {
+
+        ++positionsEvaluated;
         
         // GET WHITE COUNT MINUS BLACK COUNT
         //--------------------------------------------------------------------//
