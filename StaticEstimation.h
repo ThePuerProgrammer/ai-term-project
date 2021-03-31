@@ -28,12 +28,13 @@ private:
     std::vector<std::string> positions;
     std::unordered_map<int, int> estimationsMap;
     int bestEstimation;
+    bool whitesTurn;
     //------------------------------------------------------------------------//
 public:  
     // CONSTRUCTORS
     //------------------------------------------------------------------------//
-    StaticEstimation();
-    StaticEstimation(std::vector<std::string>);
+    StaticEstimation(bool);
+    StaticEstimation(std::vector<std::string>, bool);
     //------------------------------------------------------------------------//
 
     // PUBLIC STATIC VARIABLES
@@ -45,9 +46,9 @@ public:
     //------------------------------------------------------------------------//
     void estimateMidgame();
     void estimateOpening();
-    int numberOfBlackPieces(std::string);
-    int numberOfWhitePieces(std::string);
+    int numberOfPieces(std::string, char);
     int numberOfBlackMoves();
+    int numberOfNeighbors(std::string, char);
     //------------------------------------------------------------------------//
 
     // GETTERS AND SETTERS
@@ -55,9 +56,11 @@ public:
     std::vector<std::string> getPositions();
     std::unordered_map<int, int> getEstimationsMap();
     int getBestEstimation();
+    bool getWhitesTurn();
 
     void setPositions(std::vector<std::string>);
     void setEstimationsMap(std::unordered_map<int, int>);
+    void setWhitesTurn(bool);
     //------------------------------------------------------------------------//
 }; // class StaticEstimation
 //============================================================================//

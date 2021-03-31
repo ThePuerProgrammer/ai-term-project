@@ -11,6 +11,7 @@
 //============================================================================//
 #include <iostream>
 #include <fstream>
+#include <chrono>
 #include <unordered_map>
 #include "GUI.h"
 #include "MoveGen.h"
@@ -21,7 +22,8 @@
 
 // FORWARD DECLARATIONS / PROTOTYPES
 //============================================================================//
-void recursiveTreeFill(StateNode*, int, bool);
+int recursiveTreeFill(StateNode*, int, bool);
+void evaluateTreeAtDepth(StateNode*, bool);
 //============================================================================//
 
 // GLOBAL VARIABLES
@@ -39,6 +41,7 @@ int main(int argc, char *argv[]) {
     int searchDepth = 0, positionsEvaluated = 0, miniMaxEstimate = 0;
     std::string inputBoardPos = "", outputBoardPos = "";
     bool whitesTurn = true;
+    bool myTurn = whitesTurn;
     //------------------------------------------------------------------------//
 
     //************************************************************************//
@@ -135,20 +138,75 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> openingMoves = moveGen.generateMovesOpening();
     //------------------------------------------------------------------------//
 
-    // GIVE THE ROOT NODE ITS FIRST SET OF CHILD NODES AND GROW TO SEARCH DEPTH
+    // EVALUATE THE TIME PASSED. T FOR TOTAL MOVE SELECTION TIME
     //------------------------------------------------------------------------//
-    if (searchDepth >= 1) 
-        rootNode.addChild(openingMoves);
-    StateNode* p = rootNode.getChildNodes()[0];
-    whitesTurn = !whitesTurn;
-    recursiveTreeFill(p, searchDepth, whitesTurn);
+    std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
     //------------------------------------------------------------------------//
 
+    // FOR OUR PURPOSES P IS THE TRUE ROOT NODE. SET ITS CHILDREN
+    //------------------------------------------------------------------------//
+    rootNode.addChild(openingMoves);
+
+    StateNode* p = rootNode.getChildNodes()[0];
+    for (int i = 0; i < p->getBoardStates().size(); ++i) {
+        MoveGen gen(p->getBoardStates()[i]);
+        p->addChild(gen.generateMovesOpening());
+
+        // CREATE A TRACE FOR EVERY STATE
+        //--------------------------------------------------------------------//
+        int size = p->getChildNodes()[i]->getBoardStates().size();
+        for (int j = 0; j < size; ++j) {
+            cameFrom.insert(
+                std::make_pair(
+                    p->getChildNodes()[i]->getBoardStates()[j],
+                    std::make_pair(p, j)
+                )
+            );
+        }
+    }
+    //------------------------------------------------------------------------//
+
+    // GROW THE TREE TO DEPTH
+    //------------------------------------------------------------------------//
+    std::cout << "Filling tree with eventual states. Looking " << searchDepth 
+              << " moves into the future." << std::endl;
+
+    for (int j = 0; j < p->getChildNodes().size(); ++j) 
+        if (p->getChildNodes()[j]) 
+            recursiveTreeFill(p->getChildNodes()[j], searchDepth, !whitesTurn);
+    //------------------------------------------------------------------------//
+
+    // STOP GROWTH CLOCK AND PRINT RESULTS
+    //------------------------------------------------------------------------//
+    std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
+    std::cout << "Time elapsed filling the state tree: " 
+              << std::chrono::duration_cast<std::chrono::seconds>(e - b).count() 
+              << "[s]" << std::endl;
+    //------------------------------------------------------------------------//
+
+    // ITS MINIMAX TIME
+    //------------------------------------------------------------------------//
+    b = std::chrono::steady_clock::now();
+    std::cout << "Performing MiniMax estimation on state tree" << std::endl;
+    evaluateTreeAtDepth(p, !whitesTurn);
+    //------------------------------------------------------------------------//
+
+    // STOP EVALUTAION CLOCK AND PRINT RESULTS
+    //------------------------------------------------------------------------//
+    e = std::chrono::steady_clock::now();
+    std::cout << "Time elapsed performing MiniMax: " 
+              << std::chrono::duration_cast<std::chrono::seconds>(e - b).count() 
+              << "[s]" << std::endl;
+    //------------------------------------------------------------------------//
+
+    // USING STATIC ESTIMATIONS, FIND THE BESTIMATION AND RETURN THE NEXT MOVE
+    //------------------------------------------------------------------------//
     std::unordered_map<int, std::string>::iterator it = leafEstimation.begin();
     int max = -2147483648;
-    for (;it != leafEstimation.end(); ++it) 
+    for (;it != leafEstimation.end(); ++it) {
         if ((*it).first > max) max = (*it).first;
-
+    }
 
     std::string bestFinalState = leafEstimation.at(max);
     for (int i = 1; i < searchDepth; ++i) {
@@ -156,11 +214,27 @@ int main(int argc, char *argv[]) {
         int index = cameFrom.at(bestFinalState).second;
         bestFinalState = tracker->getBoardStates()[index];
     }
+    //------------------------------------------------------------------------//
 
-    StaticEstimation staticEstimation;
+    // GET THE STATIC POSITIONS EVALUATED VARIABLE OUT OF STATIC ESTIMATION
+    //------------------------------------------------------------------------//
+    StaticEstimation staticEstimation(whitesTurn);
     positionsEvaluated = staticEstimation.positionsEvaluated;
+    //------------------------------------------------------------------------//
+
+    // RESULT
+    //------------------------------------------------------------------------//
     outputBoardPos = bestFinalState;
     miniMaxEstimate = max;
+    //------------------------------------------------------------------------//
+
+    // STOP TOTAL TIME ELAPSED CLOCK AND PRINT RESULTS
+    //------------------------------------------------------------------------//
+    e = std::chrono::steady_clock::now();
+    std::cout << "Total time for AI move selection: " 
+              << std::chrono::duration_cast<std::chrono::seconds>(e - t).count() 
+              << "[s]" << std::endl;
+    //------------------------------------------------------------------------//
 
     // WRITE OUTPUT BOARD POSITION TO OUTPUT FILE 
     //------------------------------------------------------------------------//
@@ -169,9 +243,10 @@ int main(int argc, char *argv[]) {
 
     // PRINT BOARD/INPUT_POS/OUTPUT_POS/TOTAL_EVALUATIONS/MINIMAX_ESTIMATE
     //------------------------------------------------------------------------//
-    gui.set_board_pos(outputBoardPos);
     std::cout << "Output board position: " << std::endl;
+    gui.set_board_pos(outputBoardPos);
     gui.print_board();
+    
     std::cout << "Input position: " << inputBoardPos << std::endl;
     std::cout << "Output position: " << outputBoardPos << std::endl;
     std::cout << "Positions evaluated by static esitmation: " 
@@ -197,74 +272,110 @@ int main(int argc, char *argv[]) {
 
 // LOCAL FUNCTIONS
 //============================================================================//
-void recursiveTreeFill(StateNode* p, int maxDepth, bool whitesTurn) {
+int recursiveTreeFill(StateNode* p, int maxDepth, bool whitesTurn) {
 
     // ONLY PROCEED TO MAX DEPTH
     //------------------------------------------------------------------------//
     if (p->getDepth() < maxDepth) {
 
-        // LOOP THROUGH EVERY BOARD STATE IN THE NODES STATE ARRAY
+        int bestEstimate = -2147483648;
+
+        // THIS ALLOWS FOR ITERATIVE DEEPENING IF NEEDED
         //--------------------------------------------------------------------//
-        for (int i = 0; i < p->getBoardStates().size(); ++i) {
+        if (p->getChildNodes().size() == 0) {
 
-            // LOCAL VARIABLES
+            // LOOP THROUGH EVERY BOARD STATE IN THE NODES STATE ARRAY
             //----------------------------------------------------------------//
-            std::string board;
-            StateTool tool;
+            for (int i = 0; i < p->getBoardStates().size(); ++i) {
 
-            // IF BLACKS TURN, INVERT THE BOARD
-            //----------------------------------------------------------------//
-            if (!whitesTurn) {
-                tool.setBoardState(p->getBoardStates()[i]);
-                board = tool.getInvertBoard();
-            } else {
-                board = p->getBoardStates()[i];
-            }
+                // LOCAL VARIABLES
+                //------------------------------------------------------------//
+                std::string board;
+                StateTool tool;
 
-            // GENERATE ALL POSSIBLE MOVES FROM THIS STATE
-            //----------------------------------------------------------------//
-            MoveGen moveGen(board);
-            std::vector<std::string> m = moveGen.generateMovesOpening();
-
-            if (!whitesTurn) {
-                for (int j = 0; j < m.size(); ++j) {
-                    tool.setBoardState(m[j]);
-                    m[j] = tool.getInvertBoard();
+                // IF BLACKS TURN, INVERT THE BOARD
+                //------------------------------------------------------------//
+                if (!whitesTurn) {
+                    tool.setBoardState(p->getBoardStates()[i]);
+                    board = tool.getInvertBoard();
+                } else {
+                    board = p->getBoardStates()[i];
                 }
-            }
-            
-            // CONNECT THE NEW STATE NODE AND FILL ITS FUTURE STATES
-            //----------------------------------------------------------------//
-            p->addChild(m);
 
-            // CREATE A TRACE FOR EVERY STATE
-            //----------------------------------------------------------------//
-            int size = p->getChildNodes()[i]->getBoardStates().size();
-            for (int j = 0; j < size; ++j) {
-                cameFrom.insert(
-                    std::make_pair(
-                        p->getChildNodes()[i]->getBoardStates()[j],
-                        std::make_pair(p, j)
-                    )
-                );
-                // std::cout << p->getChildNodes()[i]->getBoardStates()[j]
-                //           << std::endl;
-            }
+                // GENERATE ALL POSSIBLE MOVES FROM THIS STATE
+                //------------------------------------------------------------//
+                MoveGen moveGen(board);
+                std::vector<std::string> m = moveGen.generateMovesOpening();
 
-            // CONTINUE THE RECURSIVE CALL
+                if (!whitesTurn) {
+                    for (int j = 0; j < m.size(); ++j) {
+                        tool.setBoardState(m[j]);
+                        m[j] = tool.getInvertBoard();
+                    }
+                }
+                
+                // CONNECT THE NEW STATE NODE AND FILL ITS FUTURE STATES
+                //------------------------------------------------------------//
+                p->addChild(m);
+
+                // CREATE A TRACE FOR EVERY STATE
+                //------------------------------------------------------------//
+                int size = p->getChildNodes()[i]->getBoardStates().size();
+                for (int j = 0; j < size; ++j) {
+                    cameFrom.insert(
+                        std::make_pair(
+                            p->getChildNodes()[i]->getBoardStates()[j],
+                            std::make_pair(p, j)
+                        )
+                    );
+                }
+
+                // CONTINUE THE RECURSIVE CALL
+                //------------------------------------------------------------//
+                int temp = recursiveTreeFill(
+                    p->getChildNodes()[i], maxDepth, !whitesTurn);
+                if (temp > bestEstimate) bestEstimate = temp;
+            }
+        } else {
+
+            // IF CHILDREN ALREADY POPULATED JUST CALL THE FUNCTION ON THEM
             //----------------------------------------------------------------//
-            recursiveTreeFill(p->getChildNodes()[i], maxDepth, !whitesTurn);
+            for (int i = 0; i < p->getChildNodes().size(); ++i) {
+                int temp = recursiveTreeFill(
+                    p->getChildNodes()[i], maxDepth, !whitesTurn);
+                if (temp > bestEstimate) bestEstimate = temp;
+            }
         }
+        return bestEstimate;
     } else {
 
         // STATIC ESTIMATION CLASS TO EVALUATE THE LEAF POSITIONS
+        // REMOVED BUT COULD BE USED TO GET BEST AT DEPTH DURING TREE GENERATION
         //--------------------------------------------------------------------//
-        StaticEstimation staticEstimation(p->getBoardStates());
+        // StaticEstimation staticEstimation(p->getBoardStates(), whitesTurn);
+        // staticEstimation.estimateOpening();
+        // int best = staticEstimation.getBestEstimation();
+        // int l = staticEstimation.getEstimationsMap().at(best);
+        // std::string pos = staticEstimation.getPositions()[l];
+        // leafEstimation.insert(std::make_pair(best, pos));
+        // return best;
+        return 0;
+    }
+}
+
+void evaluateTreeAtDepth(StateNode* r, bool whitesTurn) {
+    if (r->getChildNodes().size() == 0) {
+        StaticEstimation staticEstimation(r->getBoardStates(), whitesTurn);
         staticEstimation.estimateOpening();
         int best = staticEstimation.getBestEstimation();
         int l = staticEstimation.getEstimationsMap().at(best);
         std::string pos = staticEstimation.getPositions()[l];
         leafEstimation.insert(std::make_pair(best, pos));
+    } else {
+        for (int i = 0; i < r->getChildNodes().size(); ++i) {
+            if (r->getChildNodes()[i])
+                evaluateTreeAtDepth(r->getChildNodes()[i], !whitesTurn);
+        }
     }
 }
 //============================================================================//

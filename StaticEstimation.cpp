@@ -9,6 +9,7 @@
 // INCLUDES
 //============================================================================//
 #include "StaticEstimation.h"
+#include "MoveGen.h"
 //============================================================================//
 
 // STATIC IMPLEMENTATION
@@ -18,10 +19,15 @@ int StaticEstimation::positionsEvaluated = 0;
 
 // CONSTRUCTORS
 //============================================================================//
-StaticEstimation::StaticEstimation() {} // StaticEstimation()
+StaticEstimation::StaticEstimation(bool whitesTurn) {
+    this->whitesTurn = whitesTurn;
+} // StaticEstimation()
 
-StaticEstimation::StaticEstimation(std::vector<std::string> positions) {
+StaticEstimation::StaticEstimation(
+    std::vector<std::string> positions, bool whitesTurn
+    ) {
     this->positions = positions;
+    this->whitesTurn = whitesTurn;
 } // StaticEstimation(std::vector<std::string>)
 //============================================================================//
 
@@ -60,13 +66,20 @@ void StaticEstimation::estimateOpening() {
         
         // GET WHITE COUNT MINUS BLACK COUNT
         //--------------------------------------------------------------------//
-        int whiteCount = numberOfWhitePieces(positions[i]);
-        int blackCount = numberOfBlackPieces(positions[i]);
-        int whiteMinusBlack = whiteCount - blackCount;
+        int whiteCount = numberOfPieces(positions[i], 'W');
+        int blackCount = numberOfPieces(positions[i], 'B');
+        int whiteMinusBlack;
+        if (whitesTurn) {
+            whiteMinusBlack = whiteCount - blackCount;
+            whiteMinusBlack += numberOfNeighbors(positions[i], 'W');
+        } else {
+            whiteMinusBlack = blackCount - whiteCount;
+            whiteMinusBlack += numberOfNeighbors(positions[i], 'B');
+        }
 
         // ADD TO HASHMAP
         //--------------------------------------------------------------------//
-        estimationsMap.insert(std::make_pair(whiteMinusBlack, i));
+        estimationsMap.insert(std::make_pair(i, whiteMinusBlack));
 
         // UPDATE BEST ESTIMATION IF NEEDED
         //--------------------------------------------------------------------//
@@ -80,36 +93,34 @@ void StaticEstimation::estimateOpening() {
     bestEstimation = bestimation;
 }
 
-int StaticEstimation::numberOfWhitePieces(std::string boardPosition) {
-
-    // COUNTER
-    //------------------------------------------------------------------------//
-    int numOfWhitePieces = 0;
-
-    // COUNT NUMBER OF WHITE PIECES
-    //------------------------------------------------------------------------//
-    for (int i = 0; i < boardPosition.length(); ++i) 
-        if (boardPosition[i] == 'W') ++numOfWhitePieces;
-    
-    // RETURN THE RESULT
-    //------------------------------------------------------------------------//
-    return numOfWhitePieces;
+int StaticEstimation::numberOfNeighbors(std::string boardPosition, char c) {
+    int neighborCount = 0;
+    for (int i = 0; i < boardPosition.length(); ++i) {
+        if (boardPosition[i] == c) {
+            MoveGen moveGen;
+            int* ip = moveGen.neighbors(i);
+            for (int j = 1; j < ip[0]; ++j)
+                if (boardPosition[ip[j]] == 'x' || boardPosition[ip[j]] == c) 
+                    neighborCount++;
+        }
+    }
+    return neighborCount;
 }
 
-int StaticEstimation::numberOfBlackPieces(std::string boardPosition) {
+int StaticEstimation::numberOfPieces(std::string boardPosition, char c) {
 
     // COUNTER
     //------------------------------------------------------------------------//
-    int numOfBlackPieces = 0;
+    int numOfPieces = 0;
 
-    // COUNT NUMBER OF BLACK PIECES
+    // COUNT NUMBER OF PIECES
     //------------------------------------------------------------------------//
     for (int i = 0; i < boardPosition.length(); ++i) 
-        if (boardPosition[i] == 'B') ++numOfBlackPieces;
+        if (boardPosition[i] == c) ++numOfPieces;
     
     // RETURN THE RESULT
     //------------------------------------------------------------------------//
-    return numOfBlackPieces;
+    return numOfPieces;
 }
 //============================================================================//
 
