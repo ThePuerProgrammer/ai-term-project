@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
     // RUN MINIMAX WITH !!PROGRESSIVE DEEPENING!!
     // USING PROGRESSIVE DEEPENING FROM A DEPTH OF 1 PROVIDES MOVE INSURANCE
     //------------------------------------------------------------------------//
-    std::cout << "\nhmmm... (=っ-ェ-=)っ ┬─┬ ８（＾－＾゛８）\n\n" 
-              << std::endl;
+    std::cout << "\n(=っ-ェ-=)っ ┬─┬ ８（＾－＾゛８）\n\n" 
+              << "hmm... that's an interesting move\n" << std::endl;
     std::cout << "***RUNNING MINIMAX ALGORITHM***\n" << std::endl; 
 
     for (int i = 1; i <= searchDepth; i++) {
