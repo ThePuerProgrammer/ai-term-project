@@ -7,6 +7,11 @@
 // * MAIN 
 //============================================================================//
 
+// PREPROCESSORS
+//============================================================================//
+#define TIME_LIMIT 118
+//============================================================================//
+
 // INCLUDES
 //============================================================================//
 #include <iostream>
@@ -143,20 +148,20 @@ int main(int argc, char *argv[]) {
     t = steady_clock::now();
     //------------------------------------------------------------------------//
 
-    // FOR OUR PURPOSES, P IS THE ROOT NODE
+    // FOR OUR PURPOSES P IS THE ROOT NODE. POPULATE ITS CHILDREN
     //------------------------------------------------------------------------//
     StateNode* p = &rootNode;
     MoveGen moveGen(p->getBoardStates()[0]);
     std::vector<std::string> m = moveGen.generateMovesOpening();
     p->addChild(m);
-    std::cout << "size" << p->getChildNodes().size() << std::endl;
     //------------------------------------------------------------------------//
 
     // RUN MINIMAX WITH !!PROGRESSIVE DEEPENING!!
     // USING PROGRESSIVE DEEPENING FROM A DEPTH OF 1 PROVIDES MOVE INSURANCE
     //------------------------------------------------------------------------//
-    std::cout << "\n(=っ-ェ-=)っ ┬─┬ ８（＾－＾゛８）\n\n" 
-              << "hmm... that's an interesting move\n" << std::endl;
+    std::cout << "\n( ु⁎ᴗ_ᴗ⁎)ु.｡oO ┬─┬ （＾－＾゛）\n" << std::endl; 
+    if (inputBoardPos != "xxxxxxxxxxxxxxxxxxxxxxx")
+        std::cout << "hmm... that's an interesting move\n" << std::endl;
     std::cout << "***RUNNING MINIMAX ALGORITHM***\n" << std::endl; 
 
     for (int i = 1; i <= searchDepth; i++) {
@@ -184,15 +189,15 @@ int main(int argc, char *argv[]) {
         }
 
         std::cout << "Evaluating to depth " << i << " took "
-                  << duration_cast<seconds>(b - t).count() << "[s] to complete"
+                  << duration_cast<seconds>(e - b).count() << "[s] to complete"
                   << std::endl;
 
-        std::cout << wittyResponse(i) << "\n" << std::endl;
+        std::cout << "\n'" << wittyResponse(i) << "'\n" << std::endl;
 
         // TIME LIMIT EVALUATION
         //--------------------------------------------------------------------//
         e = steady_clock::now();
-        if (duration_cast<seconds>(e - t).count() > 118) break;
+        if (duration_cast<seconds>(e - t).count() > TIME_LIMIT) break;
     }
     //------------------------------------------------------------------------//
 
@@ -257,8 +262,8 @@ std::pair<int, int> miniMax(StateNode* p, int index, int maxDepth, bool max) {
 
     // THIS GUARDS AGAINST RUNNING OVER THE TIME LIMIT OF 2 MINUTES
     //------------------------------------------------------------------------//
-    e = std::chrono::steady_clock::now();
-    if (std::chrono::duration_cast<std::chrono::seconds>(e - t).count() > 115) {
+    e = steady_clock::now();
+    if (duration_cast<seconds>(e - t).count() > TIME_LIMIT) {
         return std::make_pair(-2147483648, -1);
     }
     //------------------------------------------------------------------------//
