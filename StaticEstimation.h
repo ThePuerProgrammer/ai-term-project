@@ -27,12 +27,14 @@ private:
     //------------------------------------------------------------------------//
     std::vector<std::string> positions;
     std::unordered_map<int, int> estimationsMap;
-    int bestEstimation;
+    int maxEstimation;
+    int minEstimation;
     bool whitesTurn;
     //------------------------------------------------------------------------//
 public:  
     // CONSTRUCTORS
     //------------------------------------------------------------------------//
+    StaticEstimation();
     StaticEstimation(bool);
     StaticEstimation(std::vector<std::string>, bool);
     //------------------------------------------------------------------------//
@@ -55,7 +57,8 @@ public:
     //------------------------------------------------------------------------//
     std::vector<std::string> getPositions();
     std::unordered_map<int, int> getEstimationsMap();
-    int getBestEstimation();
+    int getMaxEstimation();
+    int getMinEstimation();
     bool getWhitesTurn();
 
     void setPositions(std::vector<std::string>);

@@ -34,6 +34,17 @@ std::string StateTool::getInvertBoard() {
     }
     return boardState;
 }
+
+std::string StateTool::getInvertBoard(std::string board) {
+    for (int i = 0; i < board.length(); ++i) {
+        if (board[i] == 'W') {
+            board[i] = 'B';
+        } else if (board[i] == 'B') {
+            board[i] = 'W';
+        }
+    }
+    return board;
+}
 //============================================================================//
 
 // GETTERS/SETTERS

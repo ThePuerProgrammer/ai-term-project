@@ -35,6 +35,7 @@ public:
     // PUBLIC FUNCTIONS
     //------------------------------------------------------------------------//
     std::string getInvertBoard();
+    std::string getInvertBoard(std::string);
     //------------------------------------------------------------------------//
 
     // GETTERS AND SETTERS

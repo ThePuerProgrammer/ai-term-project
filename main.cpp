@@ -22,14 +22,18 @@
 
 // FORWARD DECLARATIONS / PROTOTYPES
 //============================================================================//
-int recursiveTreeFill(StateNode*, int, bool);
-void evaluateTreeAtDepth(StateNode*, bool);
+std::pair<int, int> miniMax(StateNode*, int, int, bool);
+std::string wittyResponse(int);
 //============================================================================//
 
 // GLOBAL VARIABLES
 //============================================================================//
-std::unordered_map<std::string, std::pair<StateNode*, int> > cameFrom;
-std::unordered_map<int, std::string> leafEstimation;
+std::chrono::steady_clock::time_point t, b, e;
+//============================================================================//
+
+// NAMESPACES
+//============================================================================//
+using namespace std::chrono;
 //============================================================================//
 
 // MAIN *ACCEPTS COMMAND LINE ARGS*
@@ -39,9 +43,9 @@ int main(int argc, char *argv[]) {
     // INITIALIZE LOCAL VARIABLES
     //------------------------------------------------------------------------//
     int searchDepth = 0, positionsEvaluated = 0, miniMaxEstimate = 0;
+    int indexOfBestMove = -1;
     std::string inputBoardPos = "", outputBoardPos = "";
     bool whitesTurn = true;
-    bool myTurn = whitesTurn;
     //------------------------------------------------------------------------//
 
     //************************************************************************//
@@ -86,7 +90,8 @@ int main(int argc, char *argv[]) {
         searchDepth = std::stoi(argv[3]);
     } catch (...) {
         std::cout << "argv[3]: " << argv[3] << " is invalid type." << std::endl;
-        std::cout << "Fourth command line argument must be of type int. "
+        std::cout << "Fourth command line argument must be of type int.\n"
+                  << "EXAMPLE: ./MiniMaxOpening in.txt out.txt 2\n"
                   << "Program Terminated." << std::endl;
         return 0xCA; // 202
     }
@@ -125,113 +130,87 @@ int main(int argc, char *argv[]) {
     gui.print_board();
     //------------------------------------------------------------------------//
 
-    // NODE STRUCTURE IS USED TO CREATE A TREE OF STATES FROM ROOT C.M.A. STATE
+    // NODE STRUCTURE IS USED TO CREATE A TREE OF FUTURE STATES FROM ROOT STATE
+    // STATENODE(BOARD STATES VECTOR, HEIGHT, CURRENT DEPTH)
     //------------------------------------------------------------------------//
     std::vector<std::string> onlyInputState;
     onlyInputState.push_back(inputBoardPos);
-    StateNode rootNode(onlyInputState, searchDepth, 0);
+    StateNode rootNode(onlyInputState, searchDepth, 0); 
     //------------------------------------------------------------------------//
 
-    // MOVE GENERATOR MAKES A LIST OF POSSIBLE MOVES FROM ANY BOARD STATE
+    // t REPRESENTS TOTAL ALGORITHM RUN TIME AND CAN SERVE AS OUR TIME LIMIT
     //------------------------------------------------------------------------//
-    MoveGen moveGen(inputBoardPos);
-    std::vector<std::string> openingMoves = moveGen.generateMovesOpening();
-    //------------------------------------------------------------------------//
-
-    // EVALUATE THE TIME PASSED. T FOR TOTAL MOVE SELECTION TIME
-    //------------------------------------------------------------------------//
-    std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
-    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
+    t = steady_clock::now();
     //------------------------------------------------------------------------//
 
-    // FOR OUR PURPOSES P IS THE TRUE ROOT NODE. SET ITS CHILDREN
+    // FOR OUR PURPOSES, P IS THE ROOT NODE
     //------------------------------------------------------------------------//
-    rootNode.addChild(openingMoves);
+    StateNode* p = &rootNode;
+    MoveGen moveGen(p->getBoardStates()[0]);
+    std::vector<std::string> m = moveGen.generateMovesOpening();
+    p->addChild(m);
+    std::cout << "size" << p->getChildNodes().size() << std::endl;
+    //------------------------------------------------------------------------//
 
-    StateNode* p = rootNode.getChildNodes()[0];
-    for (int i = 0; i < p->getBoardStates().size(); ++i) {
-        MoveGen gen(p->getBoardStates()[i]);
-        p->addChild(gen.generateMovesOpening());
+    // RUN MINIMAX WITH !!PROGRESSIVE DEEPENING!!
+    // USING PROGRESSIVE DEEPENING FROM A DEPTH OF 1 PROVIDES MOVE INSURANCE
+    //------------------------------------------------------------------------//
+    std::cout << "\nhmmm... (=っ-ェ-=)っ ┬─┬ ８（＾－＾゛８）\n\n" 
+              << std::endl;
+    std::cout << "***RUNNING MINIMAX ALGORITHM***\n" << std::endl; 
 
-        // CREATE A TRACE FOR EVERY STATE
+    for (int i = 1; i <= searchDepth; i++) {
+        std::cout << "Evaluating " << i << " move(s) into the future." 
+                  << std::endl;
+
+        b = steady_clock::now();
+
+        // THIS IS THE BRAIN OF THE OPERATION
         //--------------------------------------------------------------------//
-        int size = p->getChildNodes()[i]->getBoardStates().size();
-        for (int j = 0; j < size; ++j) {
-            cameFrom.insert(
-                std::make_pair(
-                    p->getChildNodes()[i]->getBoardStates()[j],
-                    std::make_pair(p, j)
-                )
+        for (int j = 0; j < p->getChildNodes().size(); ++j) {
+
+            // MINIMAX HAPPENS HERE
+            std::pair<int, int> bestMove = miniMax(
+                p->getChildNodes()[j], j, i, !whitesTurn
             );
+
+            // RESULTS. IF INT_MIN THEN TIMER RAN OUT.
+            // ALGORITHM ALLOWS FOR PARTIAL EVALUATION OF DEEPEST LEAF NODES
+            //----------------------------------------------------------------//
+            if (bestMove.first != -2147483648) {
+                miniMaxEstimate = bestMove.first;
+                indexOfBestMove = bestMove.second;
+            }
         }
+
+        std::cout << "Evaluating to depth " << i << " took "
+                  << duration_cast<seconds>(b - t).count() << "[s] to complete"
+                  << std::endl;
+
+        std::cout << wittyResponse(i) << "\n" << std::endl;
+
+        // TIME LIMIT EVALUATION
+        //--------------------------------------------------------------------//
+        e = steady_clock::now();
+        if (duration_cast<seconds>(e - t).count() > 118) break;
     }
     //------------------------------------------------------------------------//
 
-    // GROW THE TREE TO DEPTH
+    // GET THE STATIC 'POSITIONS EVALUATED' VARIABLE OUT OF STATIC ESTIMATION
     //------------------------------------------------------------------------//
-    std::cout << "Filling tree with eventual states. Looking " << searchDepth 
-              << " moves into the future." << std::endl;
-
-    for (int j = 0; j < p->getChildNodes().size(); ++j) 
-        if (p->getChildNodes()[j]) 
-            recursiveTreeFill(p->getChildNodes()[j], searchDepth, !whitesTurn);
-    //------------------------------------------------------------------------//
-
-    // STOP GROWTH CLOCK AND PRINT RESULTS
-    //------------------------------------------------------------------------//
-    std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
-    std::cout << "Time elapsed filling the state tree: " 
-              << std::chrono::duration_cast<std::chrono::seconds>(e - b).count() 
-              << "[s]" << std::endl;
-    //------------------------------------------------------------------------//
-
-    // ITS MINIMAX TIME
-    //------------------------------------------------------------------------//
-    b = std::chrono::steady_clock::now();
-    std::cout << "Performing MiniMax estimation on state tree" << std::endl;
-    evaluateTreeAtDepth(p, !whitesTurn);
-    //------------------------------------------------------------------------//
-
-    // STOP EVALUTAION CLOCK AND PRINT RESULTS
-    //------------------------------------------------------------------------//
-    e = std::chrono::steady_clock::now();
-    std::cout << "Time elapsed performing MiniMax: " 
-              << std::chrono::duration_cast<std::chrono::seconds>(e - b).count() 
-              << "[s]" << std::endl;
-    //------------------------------------------------------------------------//
-
-    // USING STATIC ESTIMATIONS, FIND THE BESTIMATION AND RETURN THE NEXT MOVE
-    //------------------------------------------------------------------------//
-    std::unordered_map<int, std::string>::iterator it = leafEstimation.begin();
-    int max = -2147483648;
-    for (;it != leafEstimation.end(); ++it) {
-        if ((*it).first > max) max = (*it).first;
-    }
-
-    std::string bestFinalState = leafEstimation.at(max);
-    for (int i = 1; i < searchDepth; ++i) {
-        StateNode* tracker = cameFrom.at(bestFinalState).first;
-        int index = cameFrom.at(bestFinalState).second;
-        bestFinalState = tracker->getBoardStates()[index];
-    }
-    //------------------------------------------------------------------------//
-
-    // GET THE STATIC POSITIONS EVALUATED VARIABLE OUT OF STATIC ESTIMATION
-    //------------------------------------------------------------------------//
-    StaticEstimation staticEstimation(whitesTurn);
+    StaticEstimation staticEstimation(1);
     positionsEvaluated = staticEstimation.positionsEvaluated;
     //------------------------------------------------------------------------//
 
-    // RESULT
+    // RESULTING BOARD POSITION
     //------------------------------------------------------------------------//
-    outputBoardPos = bestFinalState;
-    miniMaxEstimate = max;
+    outputBoardPos = p->getChildNodes()[0]->getBoardStates()[indexOfBestMove];
     //------------------------------------------------------------------------//
 
     // STOP TOTAL TIME ELAPSED CLOCK AND PRINT RESULTS
     //------------------------------------------------------------------------//
     e = std::chrono::steady_clock::now();
-    std::cout << "Total time for AI move selection: " 
+    std::cout << "Total time expended for AI move selection: " 
               << std::chrono::duration_cast<std::chrono::seconds>(e - t).count() 
               << "[s]" << std::endl;
     //------------------------------------------------------------------------//
@@ -241,12 +220,14 @@ int main(int argc, char *argv[]) {
     outputFile << outputBoardPos << std::endl;
     //------------------------------------------------------------------------//
 
+    // FINAL RESULTS
     // PRINT BOARD/INPUT_POS/OUTPUT_POS/TOTAL_EVALUATIONS/MINIMAX_ESTIMATE
     //------------------------------------------------------------------------//
     std::cout << "Output board position: " << std::endl;
     gui.set_board_pos(outputBoardPos);
     gui.print_board();
     
+    std::cout << "\n\nGET REKT (ノ °益°)ノ 彡 (\\.o.)\\\n\n" << std::endl;
     std::cout << "Input position: " << inputBoardPos << std::endl;
     std::cout << "Output position: " << outputBoardPos << std::endl;
     std::cout << "Positions evaluated by static esitmation: " 
@@ -264,23 +245,34 @@ int main(int argc, char *argv[]) {
     outputFile.close();
     //------------------------------------------------------------------------//
 
-    // TERMINATE PROGRAM SUCCESSFULLY 
+    // TERMINATE PROGRAM SUCCESSFULLY (ง⇀Ѡ↼)ง
     //------------------------------------------------------------------------//
     return 0;
 }
 //============================================================================//
 
-// LOCAL FUNCTIONS
+// MINIMAX RECURSIVE FUNCTION. BOOL EITHER MAX OR MIN (!MAX)
 //============================================================================//
-int recursiveTreeFill(StateNode* p, int maxDepth, bool whitesTurn) {
+std::pair<int, int> miniMax(StateNode* p, int index, int maxDepth, bool max) {
+
+    // THIS GUARDS AGAINST RUNNING OVER THE TIME LIMIT OF 2 MINUTES
+    //------------------------------------------------------------------------//
+    e = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(e - t).count() > 115) {
+        return std::make_pair(-2147483648, -1);
+    }
+    //------------------------------------------------------------------------//
 
     // ONLY PROCEED TO MAX DEPTH
     //------------------------------------------------------------------------//
     if (p->getDepth() < maxDepth) {
+    
+        // TRACKS THE MINIMAX ESTIMATE AND INDEX
+        // IF MAX THEN MAX ELSE IF !MAX THEN MIN
+        //----------------------------------------------------------------//
+        std::vector<std::pair<int, int> > miniMaxScoreAndIndex;
 
-        int bestEstimate = -2147483648;
-
-        // THIS ALLOWS FOR ITERATIVE DEEPENING IF NEEDED
+        // THIS ALLOWS FOR PROGRESSIVE DEEPENING. ELSE DONT GENERATE NEW NODES
         //--------------------------------------------------------------------//
         if (p->getChildNodes().size() == 0) {
 
@@ -290,92 +282,99 @@ int recursiveTreeFill(StateNode* p, int maxDepth, bool whitesTurn) {
 
                 // LOCAL VARIABLES
                 //------------------------------------------------------------//
-                std::string board;
+                std::string board = p->getBoardStates()[i];
                 StateTool tool;
 
-                // IF BLACKS TURN, INVERT THE BOARD
+                // IF MINS TURN, INVERT THE BOARD
                 //------------------------------------------------------------//
-                if (!whitesTurn) {
-                    tool.setBoardState(p->getBoardStates()[i]);
-                    board = tool.getInvertBoard();
-                } else {
-                    board = p->getBoardStates()[i];
-                }
+                if (!max) board = tool.getInvertBoard(p->getBoardStates()[i]);
 
                 // GENERATE ALL POSSIBLE MOVES FROM THIS STATE
                 //------------------------------------------------------------//
                 MoveGen moveGen(board);
                 std::vector<std::string> m = moveGen.generateMovesOpening();
 
-                if (!whitesTurn) {
-                    for (int j = 0; j < m.size(); ++j) {
-                        tool.setBoardState(m[j]);
-                        m[j] = tool.getInvertBoard();
-                    }
-                }
+                // IF MIN REVERT THE BOARD STATES FOR EVALUATION
+                //------------------------------------------------------------//
+                if (!max)
+                    for (int j = 0; j < m.size(); ++j)
+                        m[j] = tool.getInvertBoard(m[j]);
                 
                 // CONNECT THE NEW STATE NODE AND FILL ITS FUTURE STATES
                 //------------------------------------------------------------//
                 p->addChild(m);
 
-                // CREATE A TRACE FOR EVERY STATE
+                // CONTINUE THE RECURSIVE CALL (DEPTH FIRST)
                 //------------------------------------------------------------//
-                int size = p->getChildNodes()[i]->getBoardStates().size();
-                for (int j = 0; j < size; ++j) {
-                    cameFrom.insert(
-                        std::make_pair(
-                            p->getChildNodes()[i]->getBoardStates()[j],
-                            std::make_pair(p, j)
-                        )
-                    );
-                }
-
-                // CONTINUE THE RECURSIVE CALL
-                //------------------------------------------------------------//
-                int temp = recursiveTreeFill(
-                    p->getChildNodes()[i], maxDepth, !whitesTurn);
-                if (temp > bestEstimate) bestEstimate = temp;
+                miniMaxScoreAndIndex.push_back(miniMax(
+                    p->getChildNodes()[i], i, maxDepth, !max)
+                );
             }
+        // ELSE CHILD NODES ARE ALREADY POPULATED
+        //--------------------------------------------------------------------//
         } else {
-
-            // IF CHILDREN ALREADY POPULATED JUST CALL THE FUNCTION ON THEM
-            //----------------------------------------------------------------//
             for (int i = 0; i < p->getChildNodes().size(); ++i) {
-                int temp = recursiveTreeFill(
-                    p->getChildNodes()[i], maxDepth, !whitesTurn);
-                if (temp > bestEstimate) bestEstimate = temp;
+                miniMaxScoreAndIndex.push_back(miniMax(
+                    p->getChildNodes()[i], i, maxDepth, !max)
+                );
             }
         }
-        return bestEstimate;
+        //--------------------------------------------------------------------//
+
+        // EVALUATE THE MIN OR MAX AND RETURN THE BEST RESULT
+        //--------------------------------------------------------------------//
+        if (max) {
+            int maxEstimate = -2147483648;
+            int maxIndex = -1;
+            for (int i = 0; i < miniMaxScoreAndIndex.size(); ++i) {
+                if (miniMaxScoreAndIndex[i].first > maxEstimate) {
+                    maxEstimate = miniMaxScoreAndIndex[i].first;
+                    maxIndex = i;
+                }
+            }
+            return std::make_pair(maxEstimate, maxIndex);
+        } else {
+            int minEstimate = 2147483647;
+            int minIndex = -1;
+            for (int i = 0; i < miniMaxScoreAndIndex.size(); ++i) {
+                if (miniMaxScoreAndIndex[i].first < minEstimate) {
+                    minEstimate = miniMaxScoreAndIndex[i].first;
+                    minIndex = i;
+                }
+            }
+            return std::make_pair(minEstimate, minIndex);
+        }
+        //--------------------------------------------------------------------//
+
+    // ELSE WE ARE EVALUATING THE LEAF NODES TO GET THE STATIC ESTIMATES
     } else {
 
         // STATIC ESTIMATION CLASS TO EVALUATE THE LEAF POSITIONS
-        // REMOVED BUT COULD BE USED TO GET BEST AT DEPTH DURING TREE GENERATION
         //--------------------------------------------------------------------//
-        // StaticEstimation staticEstimation(p->getBoardStates(), whitesTurn);
-        // staticEstimation.estimateOpening();
-        // int best = staticEstimation.getBestEstimation();
-        // int l = staticEstimation.getEstimationsMap().at(best);
-        // std::string pos = staticEstimation.getPositions()[l];
-        // leafEstimation.insert(std::make_pair(best, pos));
-        // return best;
-        return 0;
+        StaticEstimation staticEstimation(p->getBoardStates(), max);
+        staticEstimation.estimateOpening();
+        int maxEstimation = staticEstimation.getMaxEstimation();
+        int minEstimation = staticEstimation.getMinEstimation();
+        if (max) {
+            return std::make_pair(maxEstimation, index);
+        } else {
+            return std::make_pair(minEstimation, index);
+        } 
     }
 }
+//============================================================================//
 
-void evaluateTreeAtDepth(StateNode* r, bool whitesTurn) {
-    if (r->getChildNodes().size() == 0) {
-        StaticEstimation staticEstimation(r->getBoardStates(), whitesTurn);
-        staticEstimation.estimateOpening();
-        int best = staticEstimation.getBestEstimation();
-        int l = staticEstimation.getEstimationsMap().at(best);
-        std::string pos = staticEstimation.getPositions()[l];
-        leafEstimation.insert(std::make_pair(best, pos));
-    } else {
-        for (int i = 0; i < r->getChildNodes().size(); ++i) {
-            if (r->getChildNodes()[i])
-                evaluateTreeAtDepth(r->getChildNodes()[i], !whitesTurn);
-        }
+// JUST A BIT OF FUN
+//============================================================================//
+std::string wittyResponse(int i) {
+    switch (i) {
+        case 1: return "I've got nothing";
+        case 2: return "I can do better";
+        case 3: return "This looks promising";
+        case 4: return "Great move";
+        case 5: return "You're getting smoked";
+        case 6: return "I can see the future";
+        default: return "You might as well resign";
     }
 }
 //============================================================================//

@@ -19,6 +19,10 @@ int StaticEstimation::positionsEvaluated = 0;
 
 // CONSTRUCTORS
 //============================================================================//
+StaticEstimation::StaticEstimation() {
+    this->whitesTurn = true;
+}
+
 StaticEstimation::StaticEstimation(bool whitesTurn) {
     this->whitesTurn = whitesTurn;
 } // StaticEstimation()
@@ -38,6 +42,7 @@ void StaticEstimation::estimateMidgame() {
     // VARIABLE SET TO INT_MIN WILL TRACE BEST ESTIMATION
     //------------------------------------------------------------------------//
     int bestimation = -2147483648;
+    int worstimation = 2147483647;
 
     // FOR EVERY BOARD POSITION IN POSITIONS
     //------------------------------------------------------------------------//
@@ -49,7 +54,7 @@ void StaticEstimation::estimateMidgame() {
 
     // SET THE FINAL BEST ESTIMATION FOR GETTER
     //------------------------------------------------------------------------//
-    bestEstimation = bestimation;
+    maxEstimation = bestimation;
 } // estimateAll()
 
 void StaticEstimation::estimateOpening() {
@@ -57,6 +62,7 @@ void StaticEstimation::estimateOpening() {
     // VARIABLE SET TO INT_MIN WILL TRACE BEST ESTIMATION
     //------------------------------------------------------------------------//
     int bestimation = -2147483648;
+    int worstimation = 2147483647;
 
     // FOR EVERY BOARD POSITION IN POSITIONS
     //------------------------------------------------------------------------//
@@ -81,16 +87,20 @@ void StaticEstimation::estimateOpening() {
         //--------------------------------------------------------------------//
         estimationsMap.insert(std::make_pair(i, whiteMinusBlack));
 
-        // UPDATE BEST ESTIMATION IF NEEDED
+        // UPDATE MAX AND MIN ESTIMATION IF NEEDED
         //--------------------------------------------------------------------//
         if (whiteMinusBlack > bestimation)
             bestimation = whiteMinusBlack;
+
+        if (whiteMinusBlack < worstimation)
+            worstimation = whiteMinusBlack;
     }
     //------------------------------------------------------------------------//
 
     // SET THE FINAL BEST ESTIMATION FOR GETTER
     //------------------------------------------------------------------------//
-    bestEstimation = bestimation;
+    maxEstimation = bestimation;
+    minEstimation = worstimation;
 }
 
 int StaticEstimation::numberOfNeighbors(std::string boardPosition, char c) {
@@ -134,9 +144,13 @@ std::unordered_map<int, int> StaticEstimation::getEstimationsMap() {
     return estimationsMap;
 } // getEstimationsMap()
 
-int StaticEstimation::getBestEstimation() {
-    return bestEstimation;
-} // getBestEstimation()
+int StaticEstimation::getMaxEstimation() {
+    return maxEstimation;
+} // getMaxEstimation()
+
+int StaticEstimation::getMinEstimation() {
+    return minEstimation;
+} // getMinEstimation()
 
 void StaticEstimation::setPositions(std::vector<std::string> positions) {
     this->positions = positions;
