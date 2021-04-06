@@ -34,15 +34,15 @@ public:
 
     // PUBLIC FUNCTIONS
     //------------------------------------------------------------------------//
-    std::string getInvertBoard();
-    std::string getInvertBoard(std::string);
+    std::string get_invert_board();
+    std::string get_invert_board(std::string);
     //------------------------------------------------------------------------//
 
     // GETTERS AND SETTERS
     //------------------------------------------------------------------------//
-    std::string getBoardState();
+    std::string get_board_state();
 
-    void setBoardState(std::string);
+    void set_board_state(std::string);
     //------------------------------------------------------------------------//
 };
 //============================================================================//

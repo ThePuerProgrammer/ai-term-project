@@ -2,14 +2,14 @@
 // * JESSE RANKINS
 // * UCO COMPUTER SCIENCE 2021
 // * CONCEPTS OF AI - TERM PROJECT
-// * MINIMAXOPENING PROGRAM
+// * MINIMAX OPENING PROGRAM
 // * AI THAT PLAYS NINE MENS MORRIS BETTER THAN YOU
 // * MAIN 
 //============================================================================//
 
 // PREPROCESSORS
 //============================================================================//
-#define TIME_LIMIT 118
+#define TIME_LIMIT 119
 //============================================================================//
 
 // INCLUDES
@@ -27,13 +27,14 @@
 
 // FORWARD DECLARATIONS / PROTOTYPES
 //============================================================================//
-std::pair<int, int> miniMax(StateNode*, int, int, bool);
-std::string wittyResponse(int);
+std::pair<int, int> mini_max(StateNode*, int, int, bool);
+std::string witty_response(int);
 //============================================================================//
 
 // GLOBAL VARIABLES
 //============================================================================//
 std::chrono::steady_clock::time_point t, b, e;
+bool timerRanOut = false;
 //============================================================================//
 
 // NAMESPACES
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
     if (argc != 4) {
         std::cout << "Command line arguments not properly formatted. "
                   << "Program terminated.\n" 
-                  << "EXAMPLE: ./MiniMaxOpening in.txt out.txt 2" << std::endl;
+                  << "EXAMPLE: ./miniMaxOpening in.txt out.txt 2" << std::endl;
         return 0xCA; // 202
     }
     //------------------------------------------------------------------------//
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]) {
     } catch (...) {
         std::cout << "argv[3]: " << argv[3] << " is invalid type." << std::endl;
         std::cout << "Fourth command line argument must be of type int.\n"
-                  << "EXAMPLE: ./MiniMaxOpening in.txt out.txt 2\n"
+                  << "EXAMPLE: ./miniMaxOpening in.txt out.txt 2\n"
                   << "Program Terminated." << std::endl;
         return 0xCA; // 202
     }
@@ -113,13 +114,25 @@ int main(int argc, char *argv[]) {
     // GET THE CURRENT BOARD POSITION FROM THE INPUT FILE AND TEST FOR ERRORS
     //------------------------------------------------------------------------//
     try {
+        // THERE SHOULD ONLY BE ONE LINE IN THE INPUT FILE
+        //--------------------------------------------------------------------//
         getline(inputFile, inputBoardPos);
+
+        // BOARD LENGTH MUST BE 23
+        //--------------------------------------------------------------------//
         if (inputBoardPos.length() != 23) 
             throw std::runtime_error("Invalid board position length");
+
+        // IF THERE ARE 9 WHITE PIECES THE OPENING IS OVER. DON'T CONTINUE
+        //--------------------------------------------------------------------//
+        int wC = std::count(inputBoardPos.begin(), inputBoardPos.end(), 'W');
+        if (wC >= 9)
+            throw std::runtime_error("Too many white pieces on the board");
     } catch (std::runtime_error& e) {
         std::cout << e.what() << "\n"
                   << "REQUIRED EXAMPLE: xxxxWxBBxxxxWxxxxxBBxxxx."
                   << std::endl;
+        return 0xFE; // 254
     } catch (...) {
         std::cout << "The provided input file isn't properly formatted.\n"
                   << "REQUIRED EXAMPLE: xxxxWxBBxxxxWxxxxxBBxxxx"
@@ -151,9 +164,9 @@ int main(int argc, char *argv[]) {
     // FOR OUR PURPOSES P IS THE ROOT NODE. POPULATE ITS CHILDREN
     //------------------------------------------------------------------------//
     StateNode* p = &rootNode;
-    MoveGen moveGen(p->getBoardStates()[0]);
-    std::vector<std::string> m = moveGen.generateMovesOpening();
-    p->addChild(m);
+    MoveGen moveGen(p->get_board_states()[0]);
+    std::vector<std::string> m = moveGen.generate_moves_opening();
+    p->add_child(m);
     //------------------------------------------------------------------------//
 
     // RUN MINIMAX WITH !!PROGRESSIVE DEEPENING!!
@@ -162,29 +175,49 @@ int main(int argc, char *argv[]) {
     std::cout << "\n( ु⁎ᴗ_ᴗ⁎)ु.｡oO ┬─┬ （＾－＾゛）\n" << std::endl; 
     if (inputBoardPos != "xxxxxxxxxxxxxxxxxxxxxxx")
         std::cout << "hmm... that's an interesting move\n" << std::endl;
-    std::cout << "***RUNNING MINIMAX ALGORITHM***\n" << std::endl; 
+    std::cout << "***RUNNING MINIMAX ALGORITHM***\n" << std::endl;
 
     for (int i = 1; i <= searchDepth; i++) {
         std::cout << "Evaluating " << i << " move(s) into the future." 
                   << std::endl;
 
+        // START CLOCK
+        //--------------------------------------------------------------------//
         b = steady_clock::now();
+
+        // VECTOR STORES THE BEST INDEX RESULTS OF EVERY RUN OF MINMAX
+        //--------------------------------------------------------------------//
+        std::vector<int> allIndexes;
 
         // THIS IS THE BRAIN OF THE OPERATION
         //--------------------------------------------------------------------//
-        for (int j = 0; j < p->getChildNodes().size(); ++j) {
+        for (int j = 0; j < p->get_child_nodes().size(); ++j) {
 
             // MINIMAX HAPPENS HERE
-            std::pair<int, int> bestMove = miniMax(
-                p->getChildNodes()[j], j, i, !whitesTurn
+            std::pair<int, int> bestMove = mini_max(
+                p->get_child_nodes()[j], j, i, whitesTurn
             );
 
-            // RESULTS. IF INT_MIN THEN TIMER RAN OUT.
-            // ALGORITHM ALLOWS FOR PARTIAL EVALUATION OF DEEPEST LEAF NODES
+            // STORE THEM ALL IN CASE WE NEED TO STOP
             //----------------------------------------------------------------//
-            if (bestMove.first != -2147483648) {
-                miniMaxEstimate = bestMove.first;
-                indexOfBestMove = bestMove.second;
+            allIndexes.push_back(bestMove.second);
+
+            // IF INDEX -1 THEN TIMER RAN OUT OR TOO MANY PIECES 
+            //----------------------------------------------------------------//
+            if (bestMove.second != -1) {
+
+                // IF THE TIMER RAN OUT MID SEARCH AT DEPTH N, BEST ESTIMATE
+                // FOR DEPTH N MUST BE BETTER THAN BEST ESTIMATE AT N - 1 IN
+                // ORDER TO SET THE RESULT TO INDEX AT N
+                //------------------------------------------------------------//
+                if ((timerRanOut && bestMove.first >= miniMaxEstimate) ||
+                    !timerRanOut
+                    ) {
+                    // SET RESULTS
+                    //--------------------------------------------------------//
+                    miniMaxEstimate = bestMove.first;
+                    indexOfBestMove = bestMove.second;
+                }
             }
         }
 
@@ -192,12 +225,22 @@ int main(int argc, char *argv[]) {
                   << duration_cast<seconds>(e - b).count() << "[s] to complete"
                   << std::endl;
 
-        std::cout << "\n'" << wittyResponse(i) << "'\n" << std::endl;
+        std::cout << "\n'" << witty_response(i) << "'\n" << std::endl;
 
         // TIME LIMIT EVALUATION
         //--------------------------------------------------------------------//
         e = steady_clock::now();
         if (duration_cast<seconds>(e - t).count() > TIME_LIMIT) break;
+
+        // A RESULT THAT WASN'T -1 MEANS THERE'S STILL FURTHER STATES TO EXPLORE
+        //--------------------------------------------------------------------//
+        bool boardIsFull = true;
+        for (int j = 0; j < allIndexes.size(); ++j)
+            if (allIndexes[j] != -1) boardIsFull = false;
+
+        // THEY WERE ALL -1. IT'S OVER
+        //--------------------------------------------------------------------//
+        if (boardIsFull) break;
     }
     //------------------------------------------------------------------------//
 
@@ -209,7 +252,8 @@ int main(int argc, char *argv[]) {
 
     // RESULTING BOARD POSITION
     //------------------------------------------------------------------------//
-    outputBoardPos = p->getChildNodes()[0]->getBoardStates()[indexOfBestMove];
+    outputBoardPos = 
+        p->get_child_nodes()[0]->get_board_states()[indexOfBestMove];
     //------------------------------------------------------------------------//
 
     // STOP TOTAL TIME ELAPSED CLOCK AND PRINT RESULTS
@@ -258,69 +302,90 @@ int main(int argc, char *argv[]) {
 
 // MINIMAX RECURSIVE FUNCTION. BOOL EITHER MAX OR MIN (!MAX)
 //============================================================================//
-std::pair<int, int> miniMax(StateNode* p, int index, int maxDepth, bool max) {
+std::pair<int, int> mini_max(
+    StateNode* p, int index, int maxDepth, bool max
+    ) {
 
     // THIS GUARDS AGAINST RUNNING OVER THE TIME LIMIT OF 2 MINUTES
     //------------------------------------------------------------------------//
     e = steady_clock::now();
     if (duration_cast<seconds>(e - t).count() > TIME_LIMIT) {
+
+        // SETTING TIMER RAN OUT TO TRUE MAKES THE ALGORITHM CHOOSE THE PREVIOUS
+        // DEPTH ESTIMATE WHEN THIS FUNCTION RETURNS ITS FINAL RESULT
+        //--------------------------------------------------------------------//
+        timerRanOut = true;
         return std::make_pair(-2147483648, -1);
     }
     //------------------------------------------------------------------------//
 
     // ONLY PROCEED TO MAX DEPTH
     //------------------------------------------------------------------------//
-    if (p->getDepth() < maxDepth) {
+    if (p->get_depth() < maxDepth) {
+
+        // NUMBER OF CHILD NODES
+        //--------------------------------------------------------------------//
+        int numOfChildren = p->get_child_nodes().size();
     
         // TRACKS THE MINIMAX ESTIMATE AND INDEX
         // IF MAX THEN MAX ELSE IF !MAX THEN MIN
-        //----------------------------------------------------------------//
+        //--------------------------------------------------------------------//
         std::vector<std::pair<int, int> > miniMaxScoreAndIndex;
 
         // THIS ALLOWS FOR PROGRESSIVE DEEPENING. ELSE DONT GENERATE NEW NODES
         //--------------------------------------------------------------------//
-        if (p->getChildNodes().size() == 0) {
+        if (numOfChildren == 0) {
 
             // LOOP THROUGH EVERY BOARD STATE IN THE NODES STATE ARRAY
             //----------------------------------------------------------------//
-            for (int i = 0; i < p->getBoardStates().size(); ++i) {
+            for (int i = 0; i < p->get_board_states().size(); ++i) {
 
                 // LOCAL VARIABLES
                 //------------------------------------------------------------//
-                std::string board = p->getBoardStates()[i];
+                std::string board = p->get_board_states()[i];
                 StateTool tool;
+
+                // ENSURE THAT THERE ARE VALID MOVES ON THE BOARD
+                //------------------------------------------------------------//
+                if (std::count(board.begin(), board.end(), 'W') > 9)
+                    return std::make_pair(-2147483648, -1);
+                
+                if (std::count(board.begin(), board.end(), 'B') > 9)
+                    return std::make_pair(-2147483648, -1);
 
                 // IF MINS TURN, INVERT THE BOARD
                 //------------------------------------------------------------//
-                if (!max) board = tool.getInvertBoard(p->getBoardStates()[i]);
+                if (max) board = tool.get_invert_board(
+                    p->get_board_states()[i]
+                    );
 
                 // GENERATE ALL POSSIBLE MOVES FROM THIS STATE
                 //------------------------------------------------------------//
                 MoveGen moveGen(board);
-                std::vector<std::string> m = moveGen.generateMovesOpening();
+                std::vector<std::string> m = moveGen.generate_moves_opening();
 
                 // IF MIN REVERT THE BOARD STATES FOR EVALUATION
                 //------------------------------------------------------------//
-                if (!max)
+                if (max)
                     for (int j = 0; j < m.size(); ++j)
-                        m[j] = tool.getInvertBoard(m[j]);
+                        m[j] = tool.get_invert_board(m[j]);
                 
                 // CONNECT THE NEW STATE NODE AND FILL ITS FUTURE STATES
                 //------------------------------------------------------------//
-                p->addChild(m);
+                p->add_child(m);
 
                 // CONTINUE THE RECURSIVE CALL (DEPTH FIRST)
                 //------------------------------------------------------------//
-                miniMaxScoreAndIndex.push_back(miniMax(
-                    p->getChildNodes()[i], i, maxDepth, !max)
+                miniMaxScoreAndIndex.push_back(mini_max(
+                    p->get_child_nodes()[i], i, maxDepth, !max)
                 );
             }
         // ELSE CHILD NODES ARE ALREADY POPULATED
         //--------------------------------------------------------------------//
         } else {
-            for (int i = 0; i < p->getChildNodes().size(); ++i) {
-                miniMaxScoreAndIndex.push_back(miniMax(
-                    p->getChildNodes()[i], i, maxDepth, !max)
+            for (int i = 0; i < p->get_child_nodes().size(); ++i) {
+                miniMaxScoreAndIndex.push_back(mini_max(
+                    p->get_child_nodes()[i], i, maxDepth, !max)
                 );
             }
         }
@@ -352,14 +417,19 @@ std::pair<int, int> miniMax(StateNode* p, int index, int maxDepth, bool max) {
         //--------------------------------------------------------------------//
 
     // ELSE WE ARE EVALUATING THE LEAF NODES TO GET THE STATIC ESTIMATES
+    //------------------------------------------------------------------------//
     } else {
 
         // STATIC ESTIMATION CLASS TO EVALUATE THE LEAF POSITIONS
         //--------------------------------------------------------------------//
-        StaticEstimation staticEstimation(p->getBoardStates(), max);
-        staticEstimation.estimateOpening();
-        int maxEstimation = staticEstimation.getMaxEstimation();
-        int minEstimation = staticEstimation.getMinEstimation();
+        // std::cout << (max ? "max" : "min") << std::endl;
+        // for (auto const &s : p->get_board_states()) {
+        //     std::cout << s << std::endl;
+        // }
+        StaticEstimation staticEstimation(p->get_board_states(), max);
+        staticEstimation.estimate_opening();
+        int maxEstimation = staticEstimation.get_max_estimation();
+        int minEstimation = staticEstimation.get_min_estimation();
         if (max) {
             return std::make_pair(maxEstimation, index);
         } else {
@@ -371,7 +441,7 @@ std::pair<int, int> miniMax(StateNode* p, int index, int maxDepth, bool max) {
 
 // JUST A BIT OF FUN
 //============================================================================//
-std::string wittyResponse(int i) {
+std::string witty_response(int i) {
     switch (i) {
         case 1: return "I've got nothing";
         case 2: return "I can do better";
@@ -379,6 +449,8 @@ std::string wittyResponse(int i) {
         case 4: return "Great move";
         case 5: return "You're getting smoked";
         case 6: return "I can see the future";
+        case 7: return "2EZPZ";
+        case 8: return "I could do this all day";
         default: return "You might as well resign";
     }
 }

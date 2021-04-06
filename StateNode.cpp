@@ -35,30 +35,30 @@ StateNode::~StateNode() {
 
 // PUBLIC FUNCTIONS
 //============================================================================//
-void StateNode::addChild(std::vector<std::string> childBoardStates) {
+void StateNode::add_child(std::vector<std::string> childBoardStates) {
     childNodes.push_back(new StateNode(childBoardStates, height, depth + 1));
 }
 //============================================================================//
 
 // GETTERS/SETTERS
 //============================================================================//
-std::vector<StateNode*> StateNode::getChildNodes() {
+std::vector<StateNode*> StateNode::get_child_nodes() {
     return childNodes;
 }
 
-std::vector<std::string> StateNode::getBoardStates() {
+std::vector<std::string> StateNode::get_board_states() {
     return boardStates;
 }
 
-int StateNode::getDepth() {
+int StateNode::get_depth() {
     return depth;
 }
 
-void StateNode::setChildNodes(std::vector<StateNode*> childNodes) {
+void StateNode::set_child_nodes(std::vector<StateNode*> childNodes) {
     this->childNodes = childNodes;
 }
 
-void StateNode::setBoardStates(std::vector<std::string> boardStates) {
+void StateNode::set_board_states(std::vector<std::string> boardStates) {
     this->boardStates = boardStates;
 }
 //============================================================================//

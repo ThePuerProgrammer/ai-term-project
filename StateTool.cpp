@@ -24,7 +24,7 @@ StateTool::StateTool(std::string boardState) {
 
 // PUBLIC FUNCTIONS
 //============================================================================//
-std::string StateTool::getInvertBoard() {
+std::string StateTool::get_invert_board() {
     for (int i = 0; i < boardState.length(); ++i) {
         if (boardState[i] == 'W') {
             boardState[i] = 'B';
@@ -35,7 +35,7 @@ std::string StateTool::getInvertBoard() {
     return boardState;
 }
 
-std::string StateTool::getInvertBoard(std::string board) {
+std::string StateTool::get_invert_board(std::string board) {
     for (int i = 0; i < board.length(); ++i) {
         if (board[i] == 'W') {
             board[i] = 'B';
@@ -49,7 +49,7 @@ std::string StateTool::getInvertBoard(std::string board) {
 
 // GETTERS/SETTERS
 //============================================================================//
-void StateTool::setBoardState(std::string boardState) {
+void StateTool::set_board_state(std::string boardState) {
     this->boardState = boardState;
 }
 //============================================================================//

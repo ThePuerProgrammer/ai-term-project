@@ -2,15 +2,15 @@
 # * JESSE RANKINS
 # * UCO COMPUTER SCIENCE 2021
 # * CONCEPTS OF AI - TERM PROJECT
-# * MINIMAXOPENING MAKEFILE
+# * ALPHABETA OPENING MAKEFILE
 ################################################################################
 
 ################################################################################
 # EXECUTABLE
-MiniMaxOpening: GUI.o MoveGen.o StaticEstimation.o\
+AlphaBetaOpening: GUI.o MoveGen.o StaticEstimation.o\
 				StateNode.o StateTool.o main.o
 	g++ GUI.o MoveGen.o StaticEstimation.o StateNode.o\
-		StateTool.o main.o -o MiniMaxOpening
+		StateTool.o main.o -o AlphaBetaOpening
 ################################################################################
 # .o FILES
 GUI.o: GUI.h GUI.cpp
@@ -32,5 +32,5 @@ main.o: GUI.h MoveGen.h StateNode.h StateTool.h StaticEstimation.h main.cpp
 	g++ -c -g main.cpp
 ################################################################################
 clean:
-	rm *.o MiniMaxOpening
+	rm *.o AlphaBetaOpening
 ################################################################################

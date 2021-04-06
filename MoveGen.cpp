@@ -26,7 +26,7 @@ MoveGen::MoveGen(std::string inputBoardState) {
 
 // PUBLIC FUNCTIONS
 //============================================================================//
-std::vector<std::string> MoveGen::generateAdd() {
+std::vector<std::string> MoveGen::generate_add() {
 
     // BOARD STATES MUST BE EMPTY
     //------------------------------------------------------------------------//
@@ -38,8 +38,8 @@ std::vector<std::string> MoveGen::generateAdd() {
         if (inputBoardState[i] == 'x') {
             copyBoardState = inputBoardState;
             copyBoardState[i] = 'W';
-            if (closeMill(i)) {
-                generateRemove();
+            if (close_mill(i)) {
+                generate_remove();
             } else {
                 boardStates.push_back(copyBoardState);
             }
@@ -51,9 +51,9 @@ std::vector<std::string> MoveGen::generateAdd() {
     //------------------------------------------------------------------------//
     copyBoardState = "";
     return boardStates;
-} // generateAdd()
+} // generate_add()
 
-std::vector<std::string> MoveGen::generateMove() {
+std::vector<std::string> MoveGen::generate_move() {
 
     // BOARD STATES MUST BE EMPTY
     //------------------------------------------------------------------------//    
@@ -78,8 +78,8 @@ std::vector<std::string> MoveGen::generateMove() {
                     copyBoardState = inputBoardState;
                     copyBoardState[i] = 'x';
                     copyBoardState[*(n + j)] = 'W';
-                    if (closeMill(*(n + j))) {
-                        generateRemove();
+                    if (close_mill(*(n + j))) {
+                        generate_remove();
                     } else {
                         boardStates.push_back(copyBoardState);
                     }
@@ -94,27 +94,27 @@ std::vector<std::string> MoveGen::generateMove() {
     //------------------------------------------------------------------------//
     copyBoardState = "";
     return boardStates;
-} // generateMove()
+} // generate_move()
 
-std::vector<std::string> MoveGen::generateMovesOpening() {
+std::vector<std::string> MoveGen::generate_moves_opening() {
 
     // CLASS MEMBER MANAGEMENT RENDERED THIS FUNCTION REDUNDANT
     //------------------------------------------------------------------------//
-    return generateAdd();
-} // generateMovesOpening()
+    return generate_add();
+} // generate_moves_opening()
 
-std::vector<std::string> MoveGen::generateMovesMidgameEndgame() {
+std::vector<std::string> MoveGen::generate_moves_midgame_endgame() {
     
     // IF THERE ARE 3 WHITE PIECES ON THE BOARD
     //------------------------------------------------------------------------//
     if (std::count(inputBoardState.begin(), inputBoardState.end(), 'W') == 3) {
-        return generateHopping();
+        return generate_hopping();
     } else {
-        return generateMove();
+        return generate_move();
     }
-} // generateMovesMidgameEndgame()
+} // generate_moves_midgame_endgame()
 
-std::vector<std::string> MoveGen::generateHopping() {
+std::vector<std::string> MoveGen::generate_hopping() {
     
     // BOARD STATES MUST BE EMPTY
     //------------------------------------------------------------------------// 
@@ -132,8 +132,8 @@ std::vector<std::string> MoveGen::generateHopping() {
                     copyBoardState = inputBoardState;
                     copyBoardState[i] = 'x';
                     copyBoardState[j] = 'W';
-                    if (closeMill(j)) {
-                        generateRemove();
+                    if (close_mill(j)) {
+                        generate_remove();
                     } else {
                         boardStates.push_back(copyBoardState);
                     }
@@ -145,14 +145,14 @@ std::vector<std::string> MoveGen::generateHopping() {
     //------------------------------------------------------------------------//
     copyBoardState = "";
     return boardStates;
-} // generateHopping()
+} // generate_hopping()
 
-void MoveGen::generateRemove() {
+void MoveGen::generate_remove() {
     bool nothingAddedToBoard = true;
     std::string localBoardCopy = copyBoardState;
     for (int i = 0; i < localBoardCopy.length(); ++i) {
         if (localBoardCopy[i] == 'B') {
-            if (!closeMill(i)) {
+            if (!close_mill(i)) {
                 copyBoardState = localBoardCopy;
                 copyBoardState[i] = 'x';
                 boardStates.push_back(copyBoardState);
@@ -172,7 +172,7 @@ void MoveGen::generateRemove() {
     // RESET THE COPY FOR USE IN OTHER FUNCTIONS AND RETURN THE FUNCTION RESULT
     //------------------------------------------------------------------------//
     copyBoardState = "";
-} // generateRemove()
+} // generate_remove()
 
 int* MoveGen::neighbors(const int& l) {
 
@@ -363,7 +363,7 @@ int* MoveGen::neighbors(const int& l) {
     return n;
 } // neighbors()
 
-bool MoveGen::closeMill(const int& l) {
+bool MoveGen::close_mill(const int& l) {
 
     // C CANNOT BE EMPTY SQUARE 'x'
     //------------------------------------------------------------------------//
@@ -587,32 +587,32 @@ bool MoveGen::closeMill(const int& l) {
         }
         default: return false;
     }
-} // closeMill()
+} // close_mill()
 //============================================================================//
 
 // GETTERS AND SETTERS
 //============================================================================//
-std::vector<std::string> MoveGen::getBoardStates() {
+std::vector<std::string> MoveGen::get_board_states() {
     return boardStates;
 }
 
-std::string MoveGen::getInputBoardState() {
+std::string MoveGen::get_input_board_state() {
     return inputBoardState;
 }
 
-std::string MoveGen::getCopyBoardState() {
+std::string MoveGen::get_copy_board_state() {
     return copyBoardState;
 }
 
-void MoveGen::setBoardStates(std::vector<std::string> boardStates) {
+void MoveGen::set_board_states(std::vector<std::string> boardStates) {
     this->boardStates = boardStates;
 }
 
-void MoveGen::setInputBoardState(std::string inputBoardState) {
+void MoveGen::set_input_board_state(std::string inputBoardState) {
     this->inputBoardState = inputBoardState;
 }
 
-void MoveGen::setCopyBoardState(std::string copyBoardState) {
+void MoveGen::set_copy_board_state(std::string copyBoardState) {
     this->copyBoardState = copyBoardState;
 }
 //============================================================================//

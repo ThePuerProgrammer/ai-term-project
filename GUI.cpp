@@ -99,13 +99,13 @@ void GUI::print_board() {
 
               // R3
               //--------------------------------------------------------------//
-              << boardPos[11] << std::string(boardSize, '-')               // C0
-              << boardPos[12] << std::string(boardSize, '-')               // C1
-              << boardPos[13] << std::string(boardSize, ' ')               // C2
+              << boardPos[8] << std::string(boardSize, '-')                // C0
+              << boardPos[9] << std::string(boardSize, '-')                // C1
+              << boardPos[10] << std::string(boardSize, ' ')               // C2
               << " "   << std::string(boardSize, ' ')
-              << boardPos[8]  << std::string(boardSize, '-')               // C4
-              << boardPos[9]  << std::string(boardSize, '-')               // C5
-              << boardPos[10] << "\n"                                      // C6
+              << boardPos[11]  << std::string(boardSize, '-')              // C4
+              << boardPos[12]  << std::string(boardSize, '-')              // C5
+              << boardPos[13] << "\n"                                      // C6
 
               // SPACER
               //--------------------------------------------------------------//

@@ -39,20 +39,20 @@ public:
 
     // PUBLIC FUNCTIONS
     //------------------------------------------------------------------------//
-    void addChild(std::vector<std::string>);
+    void add_child(std::vector<std::string>);
     //------------------------------------------------------------------------//
 
     // GETTERS/SETTERS
     //------------------------------------------------------------------------//
-    std::vector<StateNode*> getChildNodes();
-    std::vector<std::string> getBoardStates();
-    int getDepth();
-    int getHeight();
+    std::vector<StateNode*> get_child_nodes();
+    std::vector<std::string> get_board_states();
+    int get_depth();
+    int get_height();
 
-    void setChildNodes(std::vector<StateNode*>);
-    void setBoardStates(std::vector<std::string>);
-    void setDepth(int);
-    void setHeight(int);
+    void set_child_nodes(std::vector<StateNode*>);
+    void set_board_states(std::vector<std::string>);
+    void set_depth(int);
+    void set_height(int);
     //------------------------------------------------------------------------//
 };
 //============================================================================//

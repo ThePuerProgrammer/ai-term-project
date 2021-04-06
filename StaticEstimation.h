@@ -26,7 +26,6 @@ private:
     // PRIVATE MEMBERS
     //------------------------------------------------------------------------//
     std::vector<std::string> positions;
-    std::unordered_map<int, int> estimationsMap;
     int maxEstimation;
     int minEstimation;
     bool whitesTurn;
@@ -46,24 +45,22 @@ public:
 
     // PUBLIC FUNCTIONS
     //------------------------------------------------------------------------//
-    void estimateMidgame();
-    void estimateOpening();
-    int numberOfPieces(std::string, char);
-    int numberOfBlackMoves();
-    int numberOfNeighbors(std::string, char);
+    void estimate_opening();
+    int number_of_pieces(std::string, char);
+    int number_of_neighbors(std::string, char);
+    int distance_from_mills(std::string);
+    int manhattan_distance(int, int);
     //------------------------------------------------------------------------//
 
     // GETTERS AND SETTERS
     //------------------------------------------------------------------------//
-    std::vector<std::string> getPositions();
-    std::unordered_map<int, int> getEstimationsMap();
-    int getMaxEstimation();
-    int getMinEstimation();
-    bool getWhitesTurn();
+    std::vector<std::string> get_positions();
+    int get_max_estimation();
+    int get_min_estimation();
+    bool get_whites_turn();
 
-    void setPositions(std::vector<std::string>);
-    void setEstimationsMap(std::unordered_map<int, int>);
-    void setWhitesTurn(bool);
+    void set_postions(std::vector<std::string>);
+    void set_whites_turn(bool);
     //------------------------------------------------------------------------//
 }; // class StaticEstimation
 //============================================================================//
